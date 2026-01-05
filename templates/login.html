@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}ورود{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100">
+  <div class="col-12 col-md-5 col-lg-4">
+    <div class="card app-card shadow-lg">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <div class="mb-3">
+            <i class="bi bi-shop fs-1 text-primary"></i>
+          </div>
+          <h3 class="fw-bold">ورود به سیستم</h3>
+          <div class="text-muted">سیستم مدیریت فروشگاه آنلاین</div>
+        </div>
+
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">نام کاربری</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input name="username" type="text" class="form-control" required autofocus>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">رمز عبور</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input name="password" type="password" class="form-control" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2">
+            <i class="bi bi-box-arrow-in-right ms-1"></i> ورود
+          </button>
+        </form>
+
+        <div class="mt-3 text-center text-muted small">
+          <div>اطلاعات پیش‌فرض:</div>
+          <div>نام کاربری: <strong>sara_2003</strong></div>
+          <div>رمز عبور: <strong>20032003</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

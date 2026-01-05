@@ -1,0 +1,132 @@
+* {
+  font-family: 'Vazirmatn', sans-serif;
+}
+
+body.app-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.app-navbar {
+  background: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(10px);
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 20px;
+}
+
+.app-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 24px;
+  color: white;
+}
+
+.stat-primary .stat-icon { background: #667eea; }
+.stat-success .stat-icon { background: #48bb78; }
+.stat-warning .stat-icon { background: #ed8936; }
+.stat-danger .stat-icon { background: #f56565; }
+.stat-info .stat-icon { background: #4299e1; }
+
+.stat-body {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #718096;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2d3748;
+}
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: #cbd5e0;
+  margin-bottom: 20px;
+}
+
+.app-footer {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 20px 0;
+  margin-top: 40px;
+}
+
+.persian-digits {
+  font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+.confirm-delete:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.min-vh-100 {
+  min-height: 100vh;
+}

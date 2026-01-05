@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}پروفایل{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-1">پروفایل</h3>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-4">
+    <div class="card app-card">
+      <div class="card-body text-center">
+        <div class="avatar mx-auto mb-2">
+          {{ user.full_name[:2] if user else current_user.username[:2]|upper }}
+        </div>
+        <div class="fw-bold fs-5">{{ user.full_name if user else current_user.username }}</div>
+        <div class="text-muted">{{ user.role if user else 'کاربر' }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-8">
+    <div class="card app-card">
+      <div class="card-header bg-transparent border-0 fw-bold">اطلاعات</div>
+      <div class="card-body">
+        {% if user %}
+        <p><strong>نام کاربری:</strong> {{ user.username }}</p>
+        <p><strong>ایمیل:</strong> {{ user.email }}</p>
+        <p><strong>نام کامل:</strong> {{ user.full_name }}</p>
+        <p><strong>تلفن:</strong> {{ user.phone or '—' }}</p>
+        <p><strong>آدرس:</strong> {{ user.address or '—' }}</p>
+        <p><strong>نقش:</strong> {{ user.role }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

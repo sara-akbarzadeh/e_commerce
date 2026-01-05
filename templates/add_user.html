@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}افزودن کاربر{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-1">افزودن کاربر</h3>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('users') }}">
+    <i class="bi bi-arrow-right ms-1"></i> بازگشت
+  </a>
+</div>
+
+<div class="card app-card">
+  <div class="card-body">
+    <form method="POST" class="row g-3">
+      <div class="col-12 col-md-6">
+        <label class="form-label">نام کاربری *</label>
+        <input name="username" class="form-control" required>
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">ایمیل *</label>
+        <input name="email" type="email" class="form-control" required>
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">نام کامل *</label>
+        <input name="full_name" class="form-control" required>
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">رمز عبور *</label>
+        <input name="password" type="password" class="form-control" required>
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">تلفن</label>
+        <input name="phone" class="form-control">
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label">نقش</label>
+        <select name="role" class="form-select">
+          <option value="customer">مشتری</option>
+          <option value="admin">مدیر</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">آدرس</label>
+        <textarea name="address" class="form-control" rows="2"></textarea>
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary">
+          <i class="bi bi-check2-circle ms-1"></i> ذخیره
+        </button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('users') }}">انصراف</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

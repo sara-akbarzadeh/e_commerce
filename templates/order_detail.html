@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}جزئیات سفارش{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="fw-bold mb-1">جزئیات سفارش #{{ order.order_id }}</h3>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('orders') }}">
+    <i class="bi bi-arrow-right ms-1"></i> بازگشت
+  </a>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-md-8">
+    <div class="card app-card">
+      <div class="card-header bg-transparent border-0 fw-bold">آیتم‌های سفارش</div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>محصول</th>
+              <th>تعداد</th>
+              <th>قیمت واحد</th>
+              <th>جمع</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="persian-digits">{{ item.quantity }}</td>
+              <td class="persian-digits">{{ "{:,.0f}".format(item.price|float) }}</td>
+              <td class="persian-digits">{{ "{:,.0f}".format((item.quantity * item.price)|float) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="fw-bold">
+              <td colspan="3">جمع کل:</td>
+              <td class="persian-digits">{{ "{:,.0f}".format(order.total_amount|float) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card app-card">
+      <div class="card-header bg-transparent border-0 fw-bold">اطلاعات سفارش</div>
+      <div class="card-body">
+        <p><strong>کاربر:</strong> {{ order.full_name }}</p>
+        <p><strong>وضعیت:</strong> 
+          <span class="badge text-bg-{{ 'success' if order.status=='completed' else 'warning' }}">
+            {{ order.status }}
+          </span>
+        </p>
+        <p><strong>آدرس ارسال:</strong> {{ order.shipping_address or '—' }}</p>
+        <p><strong>تاریخ:</strong> <span class="persian-date" data-date="{{ order.created_at }}"></span></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
