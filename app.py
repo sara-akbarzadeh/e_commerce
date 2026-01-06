@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
 from flask_login import login_required, logout_user, current_user, login_user
+from functools import wraps
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +16,18 @@ from auth import User, login_manager
 login_manager.init_app(app)
 login_manager.login_view = "login"
 login_manager.login_message = "لطفاً برای دسترسی به این صفحه وارد سیستم شوید."
+
+
+def admin_required(f):
+    """Decorator to require admin role."""
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != "admin":
+            flash("شما دسترسی به این صفحه را ندارید.", "danger")
+            return redirect(url_for("dashboard"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @app.context_processor
@@ -74,9 +87,15 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    stats = db.get_stats()
-    recent_orders = db.get_all_orders(limit=5)
-    return render_template("dashboard.html", stats=stats, recent_orders=recent_orders)
+    if current_user.role == "admin":
+        stats = db.get_stats()
+        recent_orders = db.get_all_orders(limit=5)
+        return render_template("dashboard.html", stats=stats, recent_orders=recent_orders)
+    else:
+        # Customer dashboard
+        user_orders = db.get_user_orders(current_user.id, limit=5)
+        user_stats = db.get_user_stats(current_user.id)
+        return render_template("dashboard.html", stats=user_stats, recent_orders=user_orders, is_customer=True)
 
 
 @app.route("/api/stats")
@@ -90,14 +109,56 @@ def api_stats():
 # Users
 # -------------------------
 @app.route("/users")
-@login_required
+@admin_required
 def users():
     users_list = db.get_all_users()
     return render_template("users.html", users=users_list)
 
 
-@app.route("/users/add", methods=["GET", "POST"])
+@app.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
 @login_required
+def edit_user(user_id):
+    # Users can only edit themselves, admins can edit anyone
+    if current_user.role != "admin" and current_user.id != user_id:
+        flash("شما دسترسی به این صفحه را ندارید.", "danger")
+        return redirect(url_for("profile"))
+    
+    user = db.get_user_by_id(user_id)
+    if not user:
+        flash("کاربر یافت نشد.", "danger")
+        return redirect(url_for("users") if current_user.role == "admin" else url_for("profile"))
+    
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip()
+        full_name = (request.form.get("full_name") or "").strip()
+        phone = (request.form.get("phone") or "").strip() or None
+        address = (request.form.get("address") or "").strip() or None
+        password = (request.form.get("password") or "").strip()
+        
+        # Only admin can change role
+        role = user["role"]
+        if current_user.role == "admin":
+            role = (request.form.get("role") or user["role"]).strip()
+        
+        if not email or not full_name:
+            flash("لطفاً تمام فیلدهای الزامی را پر کنید.", "danger")
+            return render_template("edit_user.html", user=user)
+        
+        try:
+            db.update_user(user_id, email, full_name, phone, address, role, password if password else None)
+            flash(f'اطلاعات کاربر "{full_name}" با موفقیت بروزرسانی شد.', "success")
+            if current_user.role == "admin":
+                return redirect(url_for("users"))
+            else:
+                return redirect(url_for("profile"))
+        except Exception as e:
+            flash(f"خطا در بروزرسانی کاربر: {str(e)}", "danger")
+    
+    return render_template("edit_user.html", user=user)
+
+
+@app.route("/users/add", methods=["GET", "POST"])
+@admin_required
 def add_user():
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
@@ -123,7 +184,7 @@ def add_user():
 
 
 @app.route("/users/<int:user_id>/delete")
-@login_required
+@admin_required
 def delete_user(user_id):
     try:
         u = db.get_user_by_id(user_id)
@@ -147,8 +208,47 @@ def products():
     return render_template("products.html", products=products_list)
 
 
+@app.route("/products/<int:product_id>/edit", methods=["GET", "POST"])
+@admin_required
+def edit_product(product_id):
+    product = db.get_product_by_id(product_id)
+    if not product:
+        flash("محصول یافت نشد.", "danger")
+        return redirect(url_for("products"))
+    
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        description = (request.form.get("description") or "").strip() or None
+        price = (request.form.get("price") or "0").strip()
+        stock_quantity = (request.form.get("stock_quantity") or "0").strip()
+        category = (request.form.get("category") or "").strip()
+        image_url = (request.form.get("image_url") or "").strip() or None
+        
+        if not name or not category:
+            flash("نام و دسته‌بندی الزامی است.", "danger")
+            return render_template("edit_product.html", product=product)
+        
+        try:
+            price = float(price)
+            stock_quantity = int(stock_quantity)
+            if price < 0 or stock_quantity < 0:
+                raise ValueError()
+        except Exception:
+            flash("قیمت و موجودی باید اعداد معتبر باشند.", "danger")
+            return render_template("edit_product.html", product=product)
+        
+        try:
+            db.update_product(product_id, name, description, price, stock_quantity, category, image_url)
+            flash(f'محصول "{name}" با موفقیت بروزرسانی شد.', "success")
+            return redirect(url_for("products"))
+        except Exception as e:
+            flash(f"خطا در بروزرسانی محصول: {str(e)}", "danger")
+    
+    return render_template("edit_product.html", product=product)
+
+
 @app.route("/products/add", methods=["GET", "POST"])
-@login_required
+@admin_required
 def add_product():
     if request.method == "POST":
         name = (request.form.get("name") or "").strip()
@@ -182,7 +282,7 @@ def add_product():
 
 
 @app.route("/products/<int:product_id>/delete")
-@login_required
+@admin_required
 def delete_product(product_id):
     try:
         p = db.get_product_by_id(product_id)
@@ -202,7 +302,10 @@ def delete_product(product_id):
 @app.route("/orders")
 @login_required
 def orders():
-    orders_list = db.get_all_orders()
+    if current_user.role == "admin":
+        orders_list = db.get_all_orders()
+    else:
+        orders_list = db.get_user_orders(current_user.id)
     return render_template("orders.html", orders=orders_list)
 
 
@@ -214,6 +317,11 @@ def order_detail(order_id):
         flash("سفارش یافت نشد.", "danger")
         return redirect(url_for("orders"))
     
+    # Users can only see their own orders
+    if current_user.role != "admin" and order["user_id"] != current_user.id:
+        flash("شما دسترسی به این سفارش را ندارید.", "danger")
+        return redirect(url_for("orders"))
+    
     order_items = db.get_order_items(order_id)
     return render_template("order_detail.html", order=order, order_items=order_items)
 
@@ -222,7 +330,17 @@ def order_detail(order_id):
 @login_required
 def add_order():
     if request.method == "POST":
-        user_id = (request.form.get("user_id") or "").strip()
+        # Users can only create orders for themselves
+        if current_user.role == "admin":
+            user_id = (request.form.get("user_id") or "").strip()
+            try:
+                user_id = int(user_id)
+            except Exception:
+                flash("مقادیر وارد شده معتبر نیستند.", "danger")
+                return redirect(url_for("add_order"))
+        else:
+            user_id = current_user.id
+        
         total_amount = (request.form.get("total_amount") or "0").strip()
         shipping_address = (request.form.get("shipping_address") or "").strip()
         
@@ -231,7 +349,6 @@ def add_order():
         prices = request.form.getlist("prices")
 
         try:
-            user_id = int(user_id)
             total_amount = float(total_amount)
         except Exception:
             flash("مقادیر وارد شده معتبر نیستند.", "danger")
@@ -244,10 +361,21 @@ def add_order():
         order_items = []
         for i, pid in enumerate(product_ids):
             try:
+                product_id = int(pid)
+                quantity = int(quantities[i]) if i < len(quantities) else 1
+                price = float(prices[i]) if i < len(prices) else 0
+                
+                # For admin, verify price matches product's default price
+                if current_user.role == "admin":
+                    product = db.get_product_by_id(product_id)
+                    if product and abs(price - product["price"]) > 0.01:  # Allow small floating point differences
+                        flash(f"قیمت محصول {product['name']} باید {product['price']} باشد.", "danger")
+                        return redirect(url_for("add_order"))
+                
                 order_items.append({
-                    "product_id": int(pid),
-                    "quantity": int(quantities[i]) if i < len(quantities) else 1,
-                    "price": float(prices[i]) if i < len(prices) else 0,
+                    "product_id": product_id,
+                    "quantity": quantity,
+                    "price": price,
                 })
             except Exception:
                 flash(f"خطا در پردازش محصول {pid}", "danger")
@@ -260,7 +388,7 @@ def add_order():
         except Exception as e:
             flash(f"خطا در ثبت سفارش: {str(e)}", "danger")
 
-    users_list = db.get_all_users(limit=500)
+    users_list = db.get_all_users(limit=500) if current_user.role == "admin" else []
     products_list = db.get_all_products(limit=500)
     return render_template("add_order.html", users=users_list, products=products_list)
 
@@ -268,21 +396,53 @@ def add_order():
 @app.route("/orders/<int:order_id>/status", methods=["POST"])
 @login_required
 def update_order_status(order_id):
+    order = db.get_order_by_id(order_id)
+    if not order:
+        flash("سفارش یافت نشد.", "danger")
+        return redirect(url_for("orders"))
+    
+    # Users can only update their own orders, admins can update any
+    if current_user.role != "admin" and order["user_id"] != current_user.id:
+        flash("شما دسترسی به این سفارش را ندارید.", "danger")
+        return redirect(url_for("orders"))
+    
     status = (request.form.get("status") or "").strip()
     if not status:
         flash("وضعیت جدید را وارد کنید.", "danger")
-        return redirect(url_for("orders"))
+        return redirect(url_for("order_detail", order_id=order_id))
+    
     try:
+        old_status = order["status"]
         db.update_order_status(order_id, status)
+        
+        # Update revenue when status changes to/from completed or canceled
+        if old_status == "completed" and status == "canceled":
+            # Order was completed, now canceled - decrease revenue
+            pass  # Revenue is calculated from completed orders only
+        elif old_status == "canceled" and status == "completed":
+            # Order was canceled, now completed - increase revenue
+            pass  # Revenue is calculated from completed orders only
+        
         flash(f"وضعیت سفارش {order_id} بروزرسانی شد.", "success")
     except Exception as e:
         flash(f"خطا در بروزرسانی وضعیت سفارش: {str(e)}", "danger")
-    return redirect(url_for("orders"))
+    
+    return redirect(url_for("order_detail", order_id=order_id))
 
 
 @app.route("/orders/<int:order_id>/delete")
 @login_required
 def delete_order(order_id):
+    order = db.get_order_by_id(order_id)
+    if not order:
+        flash("سفارش یافت نشد.", "danger")
+        return redirect(url_for("orders"))
+    
+    # Users can only delete their own orders, admins can delete any
+    if current_user.role != "admin" and order["user_id"] != current_user.id:
+        flash("شما دسترسی به این سفارش را ندارید.", "danger")
+        return redirect(url_for("orders"))
+    
     try:
         db.delete_order(order_id)
         flash(f"سفارش {order_id} حذف شد.", "success")

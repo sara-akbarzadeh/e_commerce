@@ -49,13 +49,36 @@
     <div class="card app-card">
       <div class="card-header bg-transparent border-0 fw-bold">اطلاعات سفارش</div>
       <div class="card-body">
+        {% if current_user.role == 'admin' %}
         <p><strong>کاربر:</strong> {{ order.full_name }}</p>
+        {% endif %}
         <p><strong>وضعیت:</strong> 
-          <span class="badge text-bg-{{ 'success' if order.status=='completed' else 'warning' }}">
+          <span class="badge text-bg-{{ 'success' if order.status=='completed' else 'warning' if order.status=='pending' else 'info' if order.status=='processing' else 'danger' }}">
             {{ order.status }}
           </span>
         </p>
-        <p><strong>آدرس ارسال:</strong> {{ order.shipping_address or '—' }}</p>
+        {% if current_user.role == 'admin' %}
+        <form method="POST" action="{{ url_for('update_order_status', order_id=order.order_id) }}" class="mt-3">
+          <label class="form-label"><strong>تغییر وضعیت:</strong></label>
+          <div class="input-group">
+            <select class="form-select" name="status">
+              <option value="pending" {% if order.status=='pending' %}selected{% endif %}>pending</option>
+              <option value="processing" {% if order.status=='processing' %}selected{% endif %}>processing</option>
+              <option value="completed" {% if order.status=='completed' %}selected{% endif %}>completed</option>
+              <option value="canceled" {% if order.status=='canceled' %}selected{% endif %}>canceled</option>
+            </select>
+            <button class="btn btn-primary" type="submit">ذخیره</button>
+          </div>
+        </form>
+        {% elif order.user_id == current_user.id and order.status == 'pending' %}
+        <form method="POST" action="{{ url_for('update_order_status', order_id=order.order_id) }}" class="mt-3">
+          <input type="hidden" name="status" value="canceled">
+          <button class="btn btn-danger w-100" type="submit" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این سفارش را لغو کنید؟')">
+            <i class="bi bi-x-circle ms-1"></i> لغو سفارش
+          </button>
+        </form>
+        {% endif %}
+        <p class="mt-3"><strong>آدرس ارسال:</strong> {{ order.shipping_address or '—' }}</p>
         <p><strong>تاریخ:</strong> <span class="persian-date" data-date="{{ order.created_at }}"></span></p>
       </div>
     </div>

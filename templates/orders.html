@@ -43,6 +43,7 @@
               <a class="btn btn-sm btn-outline-primary" href="{{ url_for('order_detail', order_id=o.order_id) }}">
                 <i class="bi bi-eye"></i>
               </a>
+              {% if current_user.role == 'admin' %}
               <form class="d-inline" method="POST" action="{{ url_for('update_order_status', order_id=o.order_id) }}">
                 <div class="input-group input-group-sm">
                   <select class="form-select" name="status">
@@ -54,6 +55,14 @@
                   <button class="btn btn-outline-primary" title="ذخیره"><i class="bi bi-check2"></i></button>
                 </div>
               </form>
+              {% elif o.user_id == current_user.id and o.status == 'pending' %}
+              <form class="d-inline" method="POST" action="{{ url_for('update_order_status', order_id=o.order_id) }}">
+                <input type="hidden" name="status" value="canceled">
+                <button class="btn btn-sm btn-outline-danger" title="لغو سفارش" onclick="return confirm('آیا مطمئن هستید؟')">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </form>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
