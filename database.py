@@ -259,6 +259,46 @@ class Database:
         finally:
             conn.close()
 
+    def update_user(self, user_id, email, full_name, phone=None, address=None, role=None, password=None):
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            updates = []
+            params = []
+            
+            if email:
+                updates.append("email = ?")
+                params.append(email)
+            if full_name:
+                updates.append("full_name = ?")
+                params.append(full_name)
+            if phone is not None:
+                updates.append("phone = ?")
+                params.append(phone)
+            if address is not None:
+                updates.append("address = ?")
+                params.append(address)
+            if role:
+                updates.append("role = ?")
+                params.append(role)
+            if password:
+                password_hash = self._hash_password(password)
+                updates.append("password = ?")
+                params.append(password_hash)
+            
+            if updates:
+                params.append(user_id)
+                cur.execute(
+                    f"UPDATE user SET {', '.join(updates)} WHERE user_id = ?",
+                    tuple(params),
+                )
+                conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def delete_user(self, user_id: int):
         self.execute("DELETE FROM user WHERE user_id = ?", (user_id,))
 
@@ -288,13 +328,13 @@ class Database:
             (name, description, price, stock_quantity, category, image_url),
         )
 
-    def update_product(self, product_id, name=None, description=None, price=None, stock_quantity=None, category=None):
+    def update_product(self, product_id, name=None, description=None, price=None, stock_quantity=None, category=None, image_url=None):
         updates = []
         params = []
         if name:
             updates.append("name = ?")
             params.append(name)
-        if description:
+        if description is not None:
             updates.append("description = ?")
             params.append(description)
         if price is not None:
@@ -306,6 +346,9 @@ class Database:
         if category:
             updates.append("category = ?")
             params.append(category)
+        if image_url is not None:
+            updates.append("image_url = ?")
+            params.append(image_url)
         
         if updates:
             params.append(product_id)
@@ -398,7 +441,58 @@ class Database:
         )
 
     def update_order_status(self, order_id: int, status: str):
-        self.execute('UPDATE "order" SET status = ? WHERE order_id = ?', (status, order_id))
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            
+            # Get current status
+            cur.execute('SELECT status FROM "order" WHERE order_id = ?', (order_id,))
+            current_status = cur.fetchone()
+            if not current_status:
+                raise ValueError("Order not found")
+            
+            old_status = current_status["status"]
+            
+            # If changing to canceled, restore stock
+            if status == "canceled" and old_status != "canceled":
+                order_items = self.get_order_items(order_id)
+                for item in order_items:
+                    cur.execute(
+                        "UPDATE product SET stock_quantity = stock_quantity + ? WHERE product_id = ?",
+                        (item["quantity"], item["product_id"]),
+                    )
+            
+            # If changing from canceled to another status, reduce stock again
+            if old_status == "canceled" and status != "canceled":
+                order_items = self.get_order_items(order_id)
+                for item in order_items:
+                    cur.execute(
+                        "UPDATE product SET stock_quantity = stock_quantity - ? WHERE product_id = ?",
+                        (item["quantity"], item["product_id"]),
+                    )
+            
+            # Update order status
+            cur.execute('UPDATE "order" SET status = ? WHERE order_id = ?', (status, order_id))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def get_user_orders(self, user_id: int, limit=200):
+        return self.execute(
+            """
+            SELECT o.order_id, o.user_id, u.username, u.full_name, o.total_amount, o.status, o.created_at
+            FROM "order" o
+            JOIN user u ON u.user_id = o.user_id
+            WHERE o.user_id = ?
+            ORDER BY o.order_id DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+            fetch=True,
+        )
 
     def delete_order(self, order_id: int):
         self.execute('DELETE FROM "order" WHERE order_id = ?', (order_id,))
@@ -419,7 +513,8 @@ class Database:
             cur.execute('SELECT COUNT(*) AS c FROM "order"')
             total_orders = cur.fetchone()["c"]
 
-            cur.execute('SELECT COALESCE(SUM(total_amount), 0) AS s FROM "order"')
+            # Only count completed orders for revenue
+            cur.execute('SELECT COALESCE(SUM(total_amount), 0) AS s FROM "order" WHERE status = "completed"')
             total_revenue = cur.fetchone()["s"]
 
             return {
@@ -430,6 +525,30 @@ class Database:
             }
         except Exception as e:
             print(f"Error getting stats: {e}")
+            return {"total_users": 0, "total_products": 0, "total_orders": 0, "total_revenue": 0}
+        finally:
+            conn.close()
+
+    def get_user_stats(self, user_id: int):
+        """Get stats for a specific user."""
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute('SELECT COUNT(*) AS c FROM "order" WHERE user_id = ?', (user_id,))
+            total_orders = cur.fetchone()["c"]
+
+            # Only count completed orders for user revenue
+            cur.execute('SELECT COALESCE(SUM(total_amount), 0) AS s FROM "order" WHERE user_id = ? AND status = "completed"', (user_id,))
+            total_revenue = cur.fetchone()["s"]
+
+            return {
+                "total_users": 0,
+                "total_products": 0,
+                "total_orders": total_orders,
+                "total_revenue": float(total_revenue),
+            }
+        except Exception as e:
+            print(f"Error getting user stats: {e}")
             return {"total_users": 0, "total_products": 0, "total_orders": 0, "total_revenue": 0}
         finally:
             conn.close()

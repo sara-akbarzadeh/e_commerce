@@ -32,6 +32,11 @@
         <p><strong>آدرس:</strong> {{ user.address or '—' }}</p>
         <p><strong>نقش:</strong> {{ user.role }}</p>
         {% endif %}
+        <div class="mt-3">
+          <a class="btn btn-primary" href="{{ url_for('edit_user', user_id=current_user.id) }}">
+            <i class="bi bi-pencil ms-1"></i> ویرایش پروفایل
+          </a>
+        </div>
       </div>
     </div>
   </div>
