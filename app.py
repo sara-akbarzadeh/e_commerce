@@ -341,18 +341,14 @@ def add_order():
         else:
             user_id = current_user.id
         
-        total_amount = (request.form.get("total_amount") or "0").strip()
+        # کل مبلغ از روی آیتم‌ها محاسبه می‌شود (ورودی کاربر نادیده گرفته می‌شود)
+        total_amount = 0
         shipping_address = (request.form.get("shipping_address") or "").strip()
         
         product_ids = request.form.getlist("product_ids")
         quantities = request.form.getlist("quantities")
+        # قیمت را از دیتابیس می‌خوانیم تا قابل تغییر توسط کاربر نباشد
         prices = request.form.getlist("prices")
-
-        try:
-            total_amount = float(total_amount)
-        except Exception:
-            flash("مقادیر وارد شده معتبر نیستند.", "danger")
-            return redirect(url_for("add_order"))
 
         if not product_ids:
             flash("حداقل یک محصول انتخاب کنید.", "danger")
@@ -363,15 +359,16 @@ def add_order():
             try:
                 product_id = int(pid)
                 quantity = int(quantities[i]) if i < len(quantities) else 1
-                price = float(prices[i]) if i < len(prices) else 0
-                
-                # For admin, verify price matches product's default price
-                if current_user.role == "admin":
-                    product = db.get_product_by_id(product_id)
-                    if product and abs(price - product["price"]) > 0.01:  # Allow small floating point differences
-                        flash(f"قیمت محصول {product['name']} باید {product['price']} باشد.", "danger")
-                        return redirect(url_for("add_order"))
-                
+
+                # قیمت را همیشه از دیتابیس می‌گیریم تا قابل تغییر نباشد
+                product = db.get_product_by_id(product_id)
+                if not product:
+                    flash(f"محصول {product_id} یافت نشد.", "danger")
+                    return redirect(url_for("add_order"))
+
+                price = float(product["price"])
+                total_amount += price * quantity
+
                 order_items.append({
                     "product_id": product_id,
                     "quantity": quantity,
