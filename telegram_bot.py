@@ -17,7 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # توکن ربات تلگرام (از متغیر محیطی)
-TELEGRAM_BOT_TOKEN = os.environ.get("7622207519:AAH_A7Ih6SjEF_RJJLyil40Jo5ZLqjOCbwY", "")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
 
 def get_user_stats_text(user_id: int) -> str:
