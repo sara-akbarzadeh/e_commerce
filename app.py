@@ -471,6 +471,39 @@ def internal_server_error(e):
     return render_template("500.html"), 500
 
 
+
+# -------------------------
+# Telegram Bot Webhook
+# -------------------------
+import telegram
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
+
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+
+# ساخت بات
+tg_app = Application.builder().token(BOT_TOKEN).build()
+
+
+# ---- /start command ----
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("سلام! به ربات فروشگاه خوش آمدید 👍")
+
+
+tg_app.add_handler(CommandHandler("start", start))
+
+
+# ---- Webhook Endpoint ----
+@app.post("/telegram_webhook")
+def telegram_webhook():
+    data = request.get_json(force=True)
+    update = telegram.Update.de_json(data, tg_app.bot)
+    tg_app.update_queue.put_nowait(update)
+    return "OK", 200
+
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
