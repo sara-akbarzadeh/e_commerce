@@ -14,6 +14,7 @@
 <div class="card app-card">
   <div class="card-body">
     <form method="POST" class="row g-3" id="orderForm">
+      {% if current_user.role == 'admin' %}
       <div class="col-12 col-md-6">
         <label class="form-label">کاربر *</label>
         <select name="user_id" class="form-select" required>
@@ -24,8 +25,12 @@
         </select>
       </div>
       <div class="col-12 col-md-6">
+      {% else %}
+      <div class="col-12">
+      {% endif %}
         <label class="form-label">مبلغ کل *</label>
-        <input name="total_amount" type="number" step="0.01" class="form-control" required>
+        <input name="total_amount" type="number" step="0.01" class="form-control" id="total_amount" required readonly>
+        <small class="text-muted">این مقدار به صورت خودکار محاسبه می‌شود</small>
       </div>
       <div class="col-12">
         <label class="form-label">آدرس ارسال</label>
@@ -49,10 +54,16 @@
                     </label>
                   </div>
                   <div class="mt-2 product-inputs" style="display: none;">
-                    <input type="number" name="quantities" class="form-control form-control-sm mb-1" 
-                           placeholder="تعداد" min="1" value="1">
-                    <input type="number" name="prices" class="form-control form-control-sm" 
-                           placeholder="قیمت واحد" step="0.01" value="{{ p.price }}">
+                    <input type="number" name="quantities" class="form-control form-control-sm mb-1 product-quantity" 
+                           placeholder="تعداد" min="1" value="1" data-product-id="{{ p.product_id }}">
+                    {% if current_user.role == 'admin' %}
+                    <input type="number" name="prices" class="form-control form-control-sm product-price" 
+                           placeholder="قیمت واحد" step="0.01" value="{{ p.price }}" data-product-id="{{ p.product_id }}" data-default-price="{{ p.price }}" readonly>
+                    <small class="text-muted d-block">قیمت قابل تغییر نیست</small>
+                    {% else %}
+                    <input type="number" name="prices" class="form-control form-control-sm product-price" 
+                           placeholder="قیمت واحد" step="0.01" value="{{ p.price }}" data-product-id="{{ p.product_id }}" data-default-price="{{ p.price }}">
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -72,6 +83,22 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function calculateTotal() {
+        let total = 0;
+        const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+        checkboxes.forEach(checkbox => {
+            const card = checkbox.closest('.card');
+            const quantityInput = card.querySelector('.product-quantity');
+            const priceInput = card.querySelector('.product-price');
+            if (quantityInput && priceInput) {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                total += quantity * price;
+            }
+        });
+        document.getElementById('total_amount').value = total.toFixed(2);
+    }
+
     const checkboxes = document.querySelectorAll('.product-checkbox');
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
@@ -81,8 +108,19 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 inputs.style.display = 'none';
             }
+            calculateTotal();
         });
     });
+
+    // Calculate total when quantity or price changes
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('product-quantity') || e.target.classList.contains('product-price')) {
+            calculateTotal();
+        }
+    });
+
+    // Initialize total
+    calculateTotal();
 });
 </script>
 {% endblock %}

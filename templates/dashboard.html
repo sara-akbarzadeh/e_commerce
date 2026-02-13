@@ -5,10 +5,33 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h3 class="fw-bold mb-1">داشبورد</h3>
-    <div class="text-muted">نمای کلی فروشگاه</div>
+    <div class="text-muted">{% if is_customer %}پنل کاربری شما{% else %}نمای کلی فروشگاه{% endif %}</div>
   </div>
 </div>
 
+{% if is_customer %}
+<div class="row g-3 mb-4">
+  <div class="col-12 col-md-6">
+    <div class="stat-card stat-warning">
+      <div class="stat-icon"><i class="bi bi-cart-check"></i></div>
+      <div class="stat-body">
+        <div class="stat-label">سفارش‌های من</div>
+        <div class="stat-value persian-digits">{{ stats.total_orders }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6">
+    <div class="stat-card stat-success">
+      <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
+      <div class="stat-body">
+        <div class="stat-label">مجموع خریدهای من</div>
+        <div class="stat-value persian-digits">{{ "{:,.0f}".format(stats.total_revenue|float) }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
 <div class="row g-3 mb-4">
   <div class="col-12 col-md-6 col-lg-3">
     <div class="stat-card stat-primary">
@@ -50,8 +73,10 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 <div class="row g-3">
+  {% if not is_customer %}
   <div class="col-12 col-lg-7">
     <div class="card app-card">
       <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
@@ -81,11 +106,36 @@
       </div>
     </div>
   </div>
+  {% else %}
+  <div class="col-12 col-lg-7">
+    <div class="card app-card">
+      <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+        <div class="fw-bold"><i class="bi bi-lightning-charge ms-1"></i> عملیات سریع</div>
+      </div>
+      <div class="card-body pt-0">
+        <div class="row g-2">
+          <div class="col-12 col-md-6">
+            <a class="btn btn-outline-warning w-100 py-3" href="{{ url_for('add_order') }}">
+              <i class="bi bi-plus-circle d-block fs-3 mb-1"></i>
+              ثبت سفارش جدید
+            </a>
+          </div>
+          <div class="col-12 col-md-6">
+            <a class="btn btn-outline-primary w-100 py-3" href="{{ url_for('profile') }}">
+              <i class="bi bi-person-circle d-block fs-3 mb-1"></i>
+              ویرایش پروفایل
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="col-12 col-lg-5">
     <div class="card app-card">
       <div class="card-header bg-transparent border-0 fw-bold">
-        <i class="bi bi-clock-history ms-1"></i> آخرین سفارش‌ها
+        <i class="bi bi-clock-history ms-1"></i> {% if is_customer %}آخرین سفارش‌های من{% else %}آخرین سفارش‌ها{% endif %}
       </div>
       <div class="card-body pt-0">
         {% if recent_orders %}
@@ -94,8 +144,14 @@
             <div class="list-group-item bg-transparent px-0">
               <div class="d-flex justify-content-between">
                 <div>
-                  <div class="fw-semibold">سفارش #{{ o.order_id }}</div>
+                  <div class="fw-semibold">
+                    <a href="{{ url_for('order_detail', order_id=o.order_id) }}" class="text-decoration-none">
+                      سفارش #{{ o.order_id }}
+                    </a>
+                  </div>
+                  {% if not is_customer %}
                   <div class="text-muted small">{{ o.full_name }}</div>
+                  {% endif %}
                 </div>
                 <div class="text-end">
                   <div class="fw-bold">{{ "{:,.0f}".format(o.total_amount|float) }}</div>

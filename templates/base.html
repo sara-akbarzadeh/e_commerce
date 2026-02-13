@@ -22,7 +22,7 @@
       <a class="navbar-brand d-flex align-items-center gap-2"
          href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('login') }}">
         <span class="brand-mark"><i class="bi bi-shop"></i></span>
-        <span class="fw-bold">E-Commerce Admin</span>
+        <span class="fw-bold">{% if current_user.is_authenticated and current_user.role == 'admin' %}E-Commerce Admin{% else %}فروشگاه آنلاین{% endif %}</span>
       </a>
 
       {% if current_user.is_authenticated %}
@@ -37,18 +37,20 @@
               <i class="bi bi-speedometer2 ms-1"></i> داشبورد
             </a>
           </li>
+          {% if current_user.role == 'admin' %}
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ['users','add_user'] %}active{% endif %}" href="{{ url_for('users') }}">
+            <a class="nav-link {% if request.endpoint in ['users','add_user','edit_user'] %}active{% endif %}" href="{{ url_for('users') }}">
               <i class="bi bi-people ms-1"></i> کاربران
             </a>
           </li>
+          {% endif %}
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ['products','add_product'] %}active{% endif %}" href="{{ url_for('products') }}">
+            <a class="nav-link {% if request.endpoint in ['products','add_product','edit_product'] %}active{% endif %}" href="{{ url_for('products') }}">
               <i class="bi bi-box-seam ms-1"></i> محصولات
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint in ['orders','add_order'] %}active{% endif %}" href="{{ url_for('orders') }}">
+            <a class="nav-link {% if request.endpoint in ['orders','add_order','order_detail'] %}active{% endif %}" href="{{ url_for('orders') }}">
               <i class="bi bi-cart-check ms-1"></i> سفارش‌ها
             </a>
           </li>
