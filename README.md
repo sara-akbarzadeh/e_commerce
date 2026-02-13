@@ -39,7 +39,7 @@ python app.py
 ```
 
 ### 4. ورود به سیستم
-- آدرس: http://localhost:5000
+- آدرس: https://ecommerce-sara-akbarzadeh2038-5egzqwvg.leapcell.dev/
 - نام کاربری: `sara_2003`
 - رمز عبور: `20032003`
 
@@ -173,14 +173,4 @@ e_commerce/
 
 - [Leapcell Documentation](https://leapcell.io/docs)
 - [Flask Documentation](https://flask.palletsprojects.com/)
-- [python-telegram-bot Documentation](https://python-telegram-bot.org/)
-
-## 📄 لایسنساین پروژه برای استفاده آموزشی ایجاد شده است.
-
-## 👥 نویسندگان
-
-پروژه درسی سیستم‌های پایگاه داده - ترم 7
-
----
-
-**نکته**: برای استفاده از ربات تلگرام، باید شناسه کاربری تلگرام را با شناسه کاربری در سیستم مرتبط کنید. در نسخه فعلی، از شناسه تلگرام به عنوان شناسه کاربری استفاده می‌شود.
+- [python-telegram-bot Documentation](https://python-telegram-bot.org/).
